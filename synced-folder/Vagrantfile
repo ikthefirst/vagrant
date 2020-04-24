@@ -1,0 +1,44 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box = "geerlingguy/centos7"
+
+	config.vm.provider :virtualbox do |v|
+		v.cpus = 1
+		v.memory = 256
+		v.linked_clone = true
+	end
+
+	# Node#1
+	config.vm.define "node1" do |node|
+		node.vm.hostname = "node1.test"
+		node.vm.network :private_network, ip: "192.168.100.101"
+		node.vm.synced_folder "data/node1", "/vagrant_data"
+	end
+
+	# Node#2
+	config.vm.define "node2" do |node|
+		node.vm.hostname = "node2.test"
+		node.vm.network :private_network, ip: "192.168.100.102"
+		node.vm.synced_folder "data/node2", "/vagrant_data"
+	end
+
+	# Node#3
+	config.vm.define "node3" do |node|
+		node.vm.hostname = "node3.test"
+		node.vm.network :private_network, ip: "192.168.100.103"
+		node.vm.synced_folder "data/node3", "/vagrant_data"
+	end
+
+	# Node#4
+	config.vm.define "node4" do |node|
+		node.vm.hostname = "node4.test"
+		node.vm.network :private_network, ip: "192.168.100.104"
+		node.vm.synced_folder "data/node4", "/vagrant_data"
+	end 
+
+end
+
+# Notes
+# 1. The option v.linked_clone does not affect the shared folders, they will be not re-used.
+# 2. Took a while to find out that node.vm.synced_folder should be there, not config.vm.synced_folder, otherwise the last node will override the shared folder for all nodes..
