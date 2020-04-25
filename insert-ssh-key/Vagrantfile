@@ -1,0 +1,47 @@
+VAGRANTFILE_API_VERSION = "2"
+SSH_PRIVATE_KEY_PATH = "c:/Data/dev/_keys/vagrant"
+SSH_PUBLIC_KEY_PATH = "c:/Data/dev/_keys/vagrant.pub"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box = "geerlingguy/centos7"
+
+	# Viirtualbox
+	config.vm.provider :virtualbox do |vbox|
+		vbox.cpus = 1
+		vbox.memory = 1024
+		vbox.linked_clone = true
+	end
+
+	# SSH
+	config.ssh.insert_key = true
+
+	config.vm.provision "copy-ssh-key", type: "file", source: SSH_PUBLIC_KEY_PATH, destination: "~/.ssh/vagrant.pub"
+	config.vm.provision "attach-ssh-key", type: "shell", privileged: false, inline: <<-SHELL
+		cat ~/.ssh/vagrant.pub >> ~/.ssh/authorized_keys
+	SHELL
+
+	# Node#1
+	config.vm.define "node1" do |node|
+		node.vm.hostname = "node1.test"
+		node.vm.network :private_network, ip: "192.168.100.101"
+	end
+
+	# Node#2
+	config.vm.define "node2" do |node|
+		node.vm.hostname = "node2.test"
+		node.vm.network :private_network, ip: "192.168.100.102"
+	end
+
+	# Node#3
+	config.vm.define "node3" do |node|
+		node.vm.hostname = "node3.test"
+		node.vm.network :private_network, ip: "192.168.100.103"
+	end
+
+	# Node#4
+	config.vm.define "node4" do |node|
+		node.vm.hostname = "node4.test"
+		node.vm.network :private_network, ip: "192.168.100.104"
+	end
+
+end
