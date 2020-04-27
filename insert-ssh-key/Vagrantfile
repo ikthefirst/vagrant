@@ -1,5 +1,4 @@
 VAGRANTFILE_API_VERSION = "2"
-SSH_PRIVATE_KEY_PATH = "c:/Data/dev/_keys/vagrant"
 SSH_PUBLIC_KEY_PATH = "c:/Data/dev/_keys/vagrant.pub"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
