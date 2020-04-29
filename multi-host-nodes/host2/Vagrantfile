@@ -1,0 +1,48 @@
+# Vagrantfile for NodeA, on Host#1
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box = "geerlingguy/centos7"
+
+	config.vm.provider :virtualbox do |v|
+		v.cpus = 1
+		v.memory = 1024
+		v.linked_clone = true
+	end
+
+	# Router#1
+	config.vm.define "router2" do |node|
+		node.vm.hostname = "router2.test"
+		
+		# DHCP
+		node.vm.network "public_network"
+		node.vm.network :private_network, ip: "192.168.200.100"
+		
+	end
+		
+	# Node#21
+	config.vm.define "node21" do |node|
+		node.vm.hostname = "node21.test"
+		node.vm.network :private_network, ip: "192.168.200.101"
+	end
+
+	# Node#22
+	config.vm.define "node22" do |node|
+		node.vm.hostname = "node22.test"
+		node.vm.network :private_network, ip: "192.168.200.102"
+	end
+
+	# Node#23
+	config.vm.define "node23" do |node|
+		node.vm.hostname = "node23.test"
+		node.vm.network :private_network, ip: "192.168.200.103"
+	end
+
+	# Node#24
+	config.vm.define "node24" do |node|
+		node.vm.hostname = "node24.test"
+		node.vm.network :private_network, ip: "192.168.200.104"
+	end
+		
+end
