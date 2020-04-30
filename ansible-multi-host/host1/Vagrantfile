@@ -16,21 +16,52 @@
 # Check if ansible is properly installed:
 # ansible --version
 
-# Before start using ansible, add the private key to the keyring. 
-# This is needed to be able to ssh to the other nodes from the control node.
+# Import host names to the local hosts table. 
+# This is needed because nodes get dynamic ip from dhcp, so we can use the static hostnames from ansible to ssh into tnem.
+# This needs to be executed only once after the VM is booted (at first login).
+# /synced/scripts/ansible/import-hosts.sh
+
+# Add the private key to the keyring. This is needed to be able to ssh to the other nodes from the control node.
 # eval $(ssh-agent -s)
 # ssh-add ~/.ssh/vagrant
+# To check your key:
+# ssh-add -l 
 
 # Test ansible by pinging the other nodes
 # cd /ansible/ad-hoc
 # ansible -m ping all
 
-VAGRANTFILE_API_VERSION = "2"
-SSH_PRIVATE_KEY_PATH = "R:/_keys/vagrant3"
-SSH_PUBLIC_KEY_PATH = "R:/_keys/vagrant3.pub"
+VERSION = "2"
 
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-	config.vm.box = "geerlingguy/centos7"
+# Host paths
+SSH_PRIVATE_KEY = "R:/_keys/vagrant3"
+SSH_PUBLIC_KEY = "R:/_keys/vagrant3.pub"
+SHARED_HOSTS_FOLDER = "R:/_hosts"
+VAGRANTSCRIPTS_FOLDER = "../scripts/vagrant"
+ANSIBLESCRIPTS_FOLDER = "../scripts/ansible"
+ANSIBLE_FOLDER = "../ansible"
+
+# Box paths
+TARGET_HOSTS = "/synced/hosts"
+TARGET_HOSTSFILE = TARGET_HOSTS + "/hosts"
+TARGET_VAGRANTSCRIPTS_FOLDER = "/synced/scripts/vagrant"
+TARGET_ANSIBLESCRIPTS_FOLDER = "/synced/scripts/ansible"
+TARGET_ANSIBLE_FOLDER = "/synced/ansible"
+PRIVATE_KEY_FILE = "~/.ssh/vagrant"
+PUBLIC_KEY_FILE = "~/.ssh/vagrant.pub"
+
+#  Scripts
+DISABLE_IPV6 = VAGRANTSCRIPTS_FOLDER + "/disable-ipv6.sh"
+UPDATE = VAGRANTSCRIPTS_FOLDER + "/update.sh"
+INSTALL_PIP3 = VAGRANTSCRIPTS_FOLDER + "/install-pip3.sh"
+INSTALL_ANSIBLE = VAGRANTSCRIPTS_FOLDER + "/install-ansible-pip.sh"
+ATTACH_PUBLIC_KEY = VAGRANTSCRIPTS_FOLDER + "/attach-public-key.sh"
+CHMOD_PRIVATE_KEY = VAGRANTSCRIPTS_FOLDER + "/private-key.sh"
+CLEAR_HOSTS = VAGRANTSCRIPTS_FOLDER + "/clear-hosts.sh"
+EXPORT_HOSTS = VAGRANTSCRIPTS_FOLDER + "/export-hosts.sh"
+
+Vagrant.configure(VERSION) do |config|
+	config.vm.box = "geerlingguy/ubuntu2004"
 
 	config.vm.provider :virtualbox do |vbox|
 		vbox.cpus = 1
@@ -38,13 +69,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		vbox.linked_clone = true
 	end
 
+	# Disable IPv6
+	config.vm.provision :shell, name: "disable-ipd6", path: DISABLE_IPV6
+	#config.vm.provision :shell, name: "software-update", path: UPDATE
+	
 	# Inject SSH public keys
 	config.ssh.insert_key = true
+	config.vm.provision "copy-ssh-public-key", type: "file", source: SSH_PUBLIC_KEY, destination: PUBLIC_KEY_FILE
+	config.vm.provision "attach-ssh-key", type: "shell", privileged: false, path: ATTACH_PUBLIC_KEY, args: PUBLIC_KEY_FILE
 
-	config.vm.provision "copy-ssh-public-key", type: "file", source: SSH_PUBLIC_KEY_PATH, destination: "~/.ssh/vagrant.pub"
-	config.vm.provision "attach-ssh-key", type: "shell", privileged: false, inline: <<-SHELL
-		cat ~/.ssh/vagrant.pub >> ~/.ssh/authorized_keys
-	SHELL
+	# Add synced folders
+	config.vm.synced_folder SHARED_HOSTS_FOLDER, TARGET_HOSTS
+	config.vm.synced_folder VAGRANTSCRIPTS_FOLDER, TARGET_VAGRANTSCRIPTS_FOLDER, type: "rsync"
+	config.vm.synced_folder ANSIBLESCRIPTS_FOLDER, TARGET_ANSIBLESCRIPTS_FOLDER, type: "rsync"
 
 	# Control Node
 	config.vm.define "control1" do |control|
@@ -52,40 +89,32 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		control.vm.network "public_network"
 
 		# Inject SSH private  key
-		control.vm.provision "copy-ssh-private-key", type: "file", source: SSH_PRIVATE_KEY_PATH, destination: "~/.ssh/vagrant"
-		control.vm.provision :shell, name: "private-key-privileges", privileged: false, path: "../vagrantscripts/private-key.sh"
+		control.vm.provision "copy-ssh-private-key", type: "file", source: SSH_PRIVATE_KEY, destination: PRIVATE_KEY_FILE
+		control.vm.provision :shell, name: "private-key-privileges", privileged: false, path: CHMOD_PRIVATE_KEY, args: PRIVATE_KEY_FILE
 		
 		# Install Ansible
-		control.vm.provision :shell, name: "install-python3", path: "../vagrantscripts/python3.sh"
-		control.vm.provision :shell, name: "install-ansible", path: "../vagrantscripts/ansible.sh"
-		
+		control.vm.provision :shell, name: "install-pip3", path: INSTALL_PIP3
+		control.vm.provision :shell, name: "install-ansible", path: INSTALL_ANSIBLE
+
 		# Add synced folders for ansible projects
-		control.vm.synced_folder "../ansible", "/ansible", type: "rsync"
+		control.vm.synced_folder ANSIBLE_FOLDER, TARGET_ANSIBLE_FOLDER, type: "rsync"
 
+		# Clear and update the shared hosts file
+		# The control node which is started first should clear the shared hosts file
+		control.vm.provision :shell, name: "clear-hosts", path: CLEAR_HOSTS, args: TARGET_HOSTSFILE
+		control.vm.provision :shell, name: "export-hosts", path: EXPORT_HOSTS, args: TARGET_HOSTSFILE
+ 
 	end
 
-	# Node#1
-	config.vm.define "node1" do |node|
-		node.vm.hostname = "node1.test"
-		node.vm.network "public_network"
-	end
-
-	# Node#2
-	config.vm.define "node2" do |node|
-		node.vm.hostname = "node2.test"
-		node.vm.network "public_network"
-	end
-
-	# Node#3
-	config.vm.define "node3" do |node|
-		node.vm.hostname = "node3.test"
-		node.vm.network "public_network"
-	end
-
-	# Node#4
-	config.vm.define "node4" do |node|
-		node.vm.hostname = "node4.test"
-		node.vm.network "public_network"
+	# Slave Nodes
+	(1..4).each do |i|
+		config.vm.define "node#{i}" do |node|
+			node.vm.hostname = "node#{i}.test"
+			node.vm.network "public_network"
+			
+			# Update hosts file
+			node.vm.provision :shell, name: "export-hosts", path: EXPORT_HOSTS, args: TARGET_HOSTSFILE
+		end
 	end
 
 end

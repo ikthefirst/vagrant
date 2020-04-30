@@ -1,5 +1,5 @@
 # Reduce permissions on the private key for current user only
-chmod 600 ~/.ssh/vagrant
+chmod 600 $1
 
 # The following steps can not be automated.
 # Start SSH-agent
