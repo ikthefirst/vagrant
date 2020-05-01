@@ -39,7 +39,7 @@ SSH_PUBLIC_KEY = "R:/_keys/vagrant3.pub"
 SHARED_HOSTS_FOLDER = "R:/_hosts"
 VAGRANTSCRIPTS_FOLDER = "../scripts/vagrant"
 ANSIBLESCRIPTS_FOLDER = "../scripts/ansible"
-ANSIBLE_FOLDER = "../ansible"
+ANSIBLE_FOLDER = "D:/dev/ansible"
 
 # Box paths
 TARGET_HOSTS = "/synced/hosts"
@@ -69,7 +69,7 @@ Vagrant.configure(VERSION) do |config|
 		vbox.linked_clone = true
 	end
 
-	# Disable IPv6
+	# Software Update
 	config.vm.provision :shell, name: "disable-ipd6", path: DISABLE_IPV6
 	#config.vm.provision :shell, name: "software-update", path: UPDATE
 	

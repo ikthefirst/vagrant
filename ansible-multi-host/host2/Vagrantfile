@@ -39,7 +39,7 @@ SSH_PUBLIC_KEY = "R:/_keys/vagrant3.pub"
 SHARED_HOSTS_FOLDER = "R:/_hosts"
 VAGRANTSCRIPTS_FOLDER = "../scripts/vagrant"
 ANSIBLESCRIPTS_FOLDER = "../scripts/ansible"
-ANSIBLE_FOLDER = "../ansible"
+ANSIBLE_FOLDER = "C:/dev/ansible"
 
 # Box paths
 TARGET_HOSTS = "/synced/hosts"
@@ -101,7 +101,7 @@ Vagrant.configure(VERSION) do |config|
 
 		# Clear and update the shared hosts file
 		# The control node which is started first should clear the shared hosts file
-		# control.vm.provision :shell, name: "clear-hosts", path: CLEAR_HOSTS, args: TARGET_HOSTSFILE
+		#control.vm.provision :shell, name: "clear-hosts", path: CLEAR_HOSTS, args: TARGET_HOSTSFILE
 		control.vm.provision :shell, name: "export-hosts", path: EXPORT_HOSTS, args: TARGET_HOSTSFILE
  
 	end
