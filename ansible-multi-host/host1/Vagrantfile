@@ -88,6 +88,11 @@ Vagrant.configure(VERSION) do |config|
 		control.vm.hostname = "control1.test"
 		control.vm.network "public_network"
 
+		# Clear and update the shared hosts file
+		# The control node which is started first should clear the shared hosts file
+		control.vm.provision :shell, name: "clear-hosts", path: CLEAR_HOSTS, args: TARGET_HOSTSFILE
+		control.vm.provision :shell, name: "export-hosts", path: EXPORT_HOSTS, args: TARGET_HOSTSFILE
+
 		# Inject SSH private  key
 		control.vm.provision "copy-ssh-private-key", type: "file", source: SSH_PRIVATE_KEY, destination: PRIVATE_KEY_FILE
 		control.vm.provision :shell, name: "private-key-privileges", privileged: false, path: CHMOD_PRIVATE_KEY, args: PRIVATE_KEY_FILE
@@ -99,11 +104,6 @@ Vagrant.configure(VERSION) do |config|
 		# Add synced folders for ansible projects
 		control.vm.synced_folder ANSIBLE_FOLDER, TARGET_ANSIBLE_FOLDER, type: "rsync"
 
-		# Clear and update the shared hosts file
-		# The control node which is started first should clear the shared hosts file
-		control.vm.provision :shell, name: "clear-hosts", path: CLEAR_HOSTS, args: TARGET_HOSTSFILE
-		control.vm.provision :shell, name: "export-hosts", path: EXPORT_HOSTS, args: TARGET_HOSTSFILE
- 
 	end
 
 	# Slave Nodes
