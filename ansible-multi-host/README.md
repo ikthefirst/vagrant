@@ -20,7 +20,7 @@ on Host2:
 $ vagrant ssh control2  
   
 (5) When first time logged in, run the following script to update the local /etc/hosts file:  
-$ /synced/scripts/ansible/import-hosts.sh'  
+$ /synced/scripts/ansible/import-hosts.sh
   
 (6) Then add the private ssh key to the keyring:  
 $ eval $(ssh-agent -s)  
